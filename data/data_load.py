@@ -35,36 +35,40 @@ class UntrimmedVideoDataset(data.Dataset):
 
 
         self.data0 = self.get_0_shot_data()
+        self.data1 = self.get_1_shot_data()
+        self.data4 = self.get_4_shot_data()
+        self.data_top = self.get_top1_top2_data()
 
-        self.data = self.data0
+        self.data = self.data0 + self.data1+self.data4+self.data_top
 
         self.len0 = len(self.data0)
+        self.len1 = len(self.data1)
+        self.len4 = len(self.data4)
+        self.len_top = len(self.data_top)
 
     def __getitem__(self, index):
         if self.mode == "train":
-
-            clip, label = self.get_0_shot_3_label_frames(self.data[index][0], self.data[index][1])
-            # if index < self.len1:
-            #     x = random.random()
-            #     if x <= 0.375:
-            #         # 0,1,2
-            #         clip, label = self.get_1_shot_3_label_frames(video_name, label_id)
-            #     elif x > 0.375:
-            #         # 3,4,5,6,7
-            #         clip, label = self.get_1_shot_5_label_frames(video_name, label_id)
-            # elif index >= self.len1 and index < self.len1+self.len0:
-            #     # 9,10,11
-            #     clip, label = self.get_0_shot_3_label_frames(video_name, label_id)
-            # else:
-            #     # 8
-            #     clip, label = self.get_4_shot_1_label_frames(video_name, label_id)
+            if index<self.len0:
+                clip, label = self.get_0_shot_3_label_frames(self.data[index][0],
+                                                             self.data[index][1])
+            elif index>=self.len0 and index<self.len0+self.len1:
+                clip, label = self.get_1_shot_5_label_frames(self.data[index][0],
+                                                             self.data[index][1])
+            elif index>=self.len0+self.len1 and self.len0+self.len1+self.len4:
+                clip, label = self.get_4_shot_1_label_frames(self.data[index][0],
+                                                             self.data[index][1])
+            else:
+                clip, label = self.get_top1_top2_frames(self.data[index][0],
+                                                        self.data[index][1],
+                                                        self.data[index][3],
+                                                        self.data[index][4])
 
             video_clips = self.crop(clip)
             return video_clips, label
 
 
     def __len__(self):
-        len_all = self.len0
+        len_all = self.len0+self.len1+self.len4+self.len_top
         print('len_all: ', len_all)
         return len_all
 
